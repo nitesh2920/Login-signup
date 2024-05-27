@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home page</title>
+    <style>
+        body {
+          font-family: Georgia, Times, "Times New Roman", serif;
+        }
+        .label {
+          display: block;
+        }
+        a {
+          color: black;
+          text-decoration: none;
+        }
+        table {
+          margin-top: 10px;
+          width: 100%;
+        }
+        tr,
+        td {
+          padding: 5px;
+        }
+        tr {
+          text-align: center;
+        }
+        button{
+            cursor:pointer;
+            font-size: 18px;
+            padding:10px;
+            color:white;
+            outline:none;
+            /* border:none; */
+            border-radius: 6px;
+        }
+        .btn{
+            background-color: rgba(23, 163, 239, 0.655);
+        }
+        .btn-danger{
+            background-color: red;
+        }
+      </style>
+</head>
+<body>
+    <h1>Home Page</h1>
+    <h3>Update Info</h3>
+    <div class="table">
+        <% if (locals.userInfo) { %>
+          <table border="1">
+            <thead>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Update Info</th>
+                <th>Delete account</th>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><%=userInfo.userName  %></td>
+                    <td><%=userInfo.email  %></td>
+                    <td >
+                      <button class="btn">Edit &#9998</button>
+                    </td>
+                    <td >,
+                      <form action="/deletaccount/<%= userInfo._id %>" method="post">
+                      <button class="btn-danger" >Delete &#128465</button></form>
+                    </td>
+                </tr>
+            </tbody>
+          </table>
+         
+        <% } %>
+
+    </div>
+   
+
+    <!-- //hidden form -->
+    <div class="editForm" style="display: none;">
+      <h3>Edit Infromation</h3>
+      <form action="/updateUser/<%= userInfo._id %>" method="POST">
+        <label class="label">
+          Name:
+          <input type="text" name="userName" value="<%= userInfo.userName %>" >
+        </label>
+        <label class="label">
+          Email:
+          <input type="email" name="email" value="<%= userInfo.email %>" >
+        </label>
+        <label class="label">
+          Password:
+          <input type="text" name="password" value="<%= userInfo.password %>" >
+        </label>
+        <button type="submit" class="btn">Save Changes</button>
+      </form>
+      </form>
+    </div>
+
+
+    <script>
+        const btn=document.querySelector('.btn');
+        const editForm=document.querySelector('.editForm');
+
+        btn.addEventListener('click',()=>{
+          editForm.style.display=editForm.style.display==='none'?'block': 'none';
+        })
+    </script>
+</body>
+</html>
