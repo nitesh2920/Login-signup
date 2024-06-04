@@ -6,10 +6,10 @@ const bcrypt = require("bcrypt");
 const {connectMongoDb}=require('./connect')
 const app = express();
 
-const PORT = 5000;
+const PORT = 3001;
 
 //connection with database
-connectMongoDb("mongodb://127.0.0.1:27017/LogSign")
+connectMongoDb("mongodb+srv://nitesh:1234@cluster0.2cefcqf.mongodb.net/Registration?retryWrites=true&w=majority&appName=Cluster0")
   .then(() => console.log("MongoDb connected"))
   .catch((err) => console.log("Server error", err));
 
@@ -186,4 +186,10 @@ app.post("/login", async (req, res) => {
   }
 });
 
-app.listen(PORT, () => `server started at ${PORT}`);
+try{
+
+  app.listen(PORT, () => console.log(`server started at ${PORT}`));
+}catch(err){
+  console.log("error hogya")
+}
+
