@@ -2,20 +2,39 @@ const express = require("express");
 const mongoose = require("mongoose");
 const path = require("path");
 const bcrypt = require("bcrypt");
+const cookieParser = require("cookie-parser");
 
-const {connectMongoDb}=require('./connect')
+const { setUser, getUser } = require("./auth");
+
+const { connectMongoDb } = require("./connect");
 const app = express();
 
 const PORT = 3001;
 
 //connection with database
-connectMongoDb("mongodb+srv://nitesh:1234@cluster0.2cefcqf.mongodb.net/Registration?retryWrites=true&w=majority&appName=Cluster0")
+connectMongoDb(
+  "mongodb+srv://nitesh:1234@cluster0.2cefcqf.mongodb.net/Registration?retryWrites=true&w=majority&appName=Cluster0"
+)
   .then(() => console.log("MongoDb connected"))
   .catch((err) => console.log("Server error", err));
 
 //middlewares
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
+app.use(cookieParser());
+
+async function restrictLogin(req, res, next) {
+  const userUid = req.cookies.uid;
+  if (!userUid) {
+    return res.redirect("/login");
+  }
+  const user = getUser(userUid);
+  if (!user) {
+    return res.redirect("/login");
+    req.user = user;
+    next();
+  }
+}
 
 //setting up views engine
 app.set("view engine", "ejs");
@@ -64,13 +83,13 @@ app.post("/signup", async (req, res) => {
   const saltRounds = 10;
   const hashPass = await bcrypt.hash(pass, saltRounds);
 
-  console.log("hi ", body);
+  // console.log("hi ", body);
   const result = await userModel.create({
     userName: body.userName,
     email: body.email,
     password: hashPass,
   });
-  console.log(result);
+  // console.log(result);
 
   res.redirect("/login");
 });
@@ -86,7 +105,7 @@ app.delete("/user/:id", async (req, res) => {
     // });
     res.redirect("/signup");
   } catch (err) {
-    console.log("error", err);
+    // console.log("error", err);
     res.status(500).send("Internal server error");
   }
 });
@@ -97,13 +116,14 @@ app.post("/deletaccount/:id", async (req, res) => {
     const result = await userModel.findByIdAndDelete(req.params.id);
     res.json("success", "User deleted successfully");
     // res.redirect("/signup");
-    console.log(result);
+    // console.log(result);
   } catch (err) {
-    console.error(err);
+    // console.error(err);
 
     res.redirect("/");
   }
 });
+
 /*It is not connect to client side yet  */
 app.patch("/user/:id", async (req, res) => {
   const id = req.params.id;
@@ -131,10 +151,9 @@ app.patch("/user/:id", async (req, res) => {
 });
 
 //update user using POST
-
 app.post("/updateUser/:id", async (req, res) => {
   const id = req.params.id;
-  console.log(id);
+  // console.log(id);
   try {
     const { userName, email } = req.body;
 
@@ -159,12 +178,35 @@ app.get("/signup", async (req, res) => {
   res.render("signup");
 });
 
+app.get("/home",async (req, res) => {
+  try {
+    // req.user now contains user information decoded from the JWT token
+    const token = req.cookies.uid;
+    const userData = getUser(token); // Validate and get user data from token
+
+    if (!userData) {
+      return res.status(401).send("Unauthorized: Invalid token");
+    }
+    // Render the home page with user information
+    const user = await userModel.findById(userData._id);
+
+    if (!user) {
+      return res.status(404).send("User not found");
+    }
+    res.render("home", { userInfo: user });
+  } catch (err) {
+    console.error("Error fetching user:", err);
+    res.status(500).send("Internal server error");
+  }
+});
+
+
 //loginUser
 app.post("/login", async (req, res) => {
   try {
-    console.log(req.body.email);
+    // console.log(req.body.email);
     const check = await userModel.findOne({ email: req.body.email });
-    console.log("check", check);
+    // console.log("check", check);
     if (!check) {
       return res.send("email cannot found");
     }
@@ -174,22 +216,21 @@ app.post("/login", async (req, res) => {
     );
 
     if (isPasswordMatch) {
-      res.render("home", {
-        userInfo: check,
-      });
+      const token = setUser(check);
+      res.cookie("uid", token);
+      // console.log(token)
+      res.redirect("/home");
     } else {
       res.send("wrong password or username ");
     }
   } catch (err) {
     console.log(err);
-    res.send("wrong details");
+    res.status(500).send("wrong details");
   }
 });
 
-try{
-
+try {
   app.listen(PORT, () => console.log(`server started at ${PORT}`));
-}catch(err){
-  console.log("error hogya")
+} catch (err) {
+  console.log("error hogya");
 }
-
